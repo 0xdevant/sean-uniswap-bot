@@ -30,8 +30,10 @@ const UNISWAP_V2ROUTER_ADDRESS = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 
 // const SEAN_ADDRESS = "0xA719CB79Af39A9C10eDA2755E0938bCE35e9DE24";
 const SEAN_ADDRESS = "0xB8c77482e45F1F44dE1745F52C74426C631bDD52";
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+// const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+// const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const USDT_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const USDC_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 var task;
@@ -46,6 +48,11 @@ const fetchSeanUSDPair = async () => {
   const SEAN_Token = new Token(ChainId.MAINNET, SEAN_ADDRESS, 18);
   const USDT_Token = new Token(ChainId.MAINNET, USDT_ADDRESS, 6);
   const USDC_Token = new Token(ChainId.MAINNET, USDC_ADDRESS, 6);
+  const DAI = new Token(
+    ChainId.MAINNET,
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    18
+  );
 
   const USDT_USDC_PAIR = await Fetcher.fetchPairData(USDT_Token, USDC_Token);
   // console.log(USDT_USDC_PAIR);
@@ -59,9 +66,9 @@ const fetchSeanUSDPair = async () => {
 
   let SEAN_USDT_PAIR = null;
   try {
-    SEAN_USDT_PAIR = await Fetcher.fetchPairData(SEAN_Token, USDT_Token);
+    SEAN_USDT_PAIR = await Fetcher.fetchPairData(DAI, USDT_Token);
   } catch (error) {
-    console.log(`SEAN_USDT_PAIR not exist...`);
+    console.log(`DAI_USDT_PAIR not exist...`);
   }
 
   if (!SEAN_USDC_PAIR && !SEAN_USDT_PAIR) {
@@ -80,14 +87,14 @@ const fetchSeanUSDPair = async () => {
     console.log(route);
   }
 
-  const amountIn = ethers.utils.parseUnits("500", 6).toString(); //500 USD
+  const amountIn = ethers.utils.parseUnits("10", 6).toString(); //10 USD
   const trade = new Trade(
     route,
     new TokenAmount(USDT_Token, amountIn),
     TradeType.EXACT_INPUT
   );
 
-  const slippageTolerance = new Percent("1000", "10000"); // 1000 bips, or 10%
+  const slippageTolerance = new Percent("50", "500"); // 1000 bips, or 0.05%
 
   const amountOutMin = trade.minimumAmountOut(slippageTolerance).raw; // needs to be converted to e.g. hex
   console.log(trade.route.path);
@@ -101,12 +108,12 @@ const fetchSeanUSDPair = async () => {
   const path = trade.route.path.map(({ address }) => address);
   const to = signer.address; // should be a checksummed recipient address
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
-  const value = trade.inputAmount.raw; // // needs to be converted to e.g. hex
+  // const value = trade.inputAmount.raw; // // needs to be converted to e.g. hex
 
   // found a SEAN/USDT or SEAN/USDC pair
   if (trade) {
-    await swap(amountIn, amountOutMin, path, to, deadline, value);
-    task.stop();
+    await swap(amountIn, amountOutMin, path, to, deadline);
+    // task.stop();
   }
 };
 
@@ -115,8 +122,8 @@ async function swap(
   amountOutMin: JSBI,
   path: any[],
   to: string,
-  deadline: number,
-  value: JSBI
+  deadline: number
+  // value: JSBI
 ) {
   const uniswapRouter = new Contract(
     UNISWAP_V2ROUTER_ADDRESS,
@@ -126,6 +133,10 @@ async function swap(
 
   const usdt = new Contract(USDT_ADDRESS, ERC20_ABI, provider);
 
+  await usdt
+    .connect(signer)
+    .approve(uniswapRouter.address, ethers.utils.parseUnits("10", 10));
+
   console.log("Swapping on Uniswap...");
   let amounts: Array<Number>;
   try {
@@ -134,10 +145,10 @@ async function swap(
       amountOutMin,
       path,
       to,
-      deadline,
-      {
-        value: value,
-      }
+      deadline
+      // {
+      //   value,
+      // }
     );
   } catch (error) {
     console.log(error);
