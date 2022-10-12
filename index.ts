@@ -105,8 +105,8 @@ const fetchSeanUSDPair = async () => {
 
   // found a SEAN/USDT or SEAN/USDC pair
   if (trade) {
+    await swap(amountIn, amountOutMin, path, to, deadline, value);
     task.stop();
-    swap(amountIn, amountOutMin, path, to, deadline, value);
   }
 };
 
@@ -129,7 +129,7 @@ async function swap(
   console.log("Swapping on Uniswap...");
   let amounts: Array<Number>;
   try {
-    amounts = uniswapRouter.swapExactTokensForTokens(
+    amounts = await uniswapRouter.swapExactTokensForTokens(
       amountIn,
       amountOutMin,
       path,
