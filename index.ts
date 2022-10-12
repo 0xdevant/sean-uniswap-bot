@@ -63,6 +63,23 @@ const execute = async () => {
     console.log(`Pairs not exist...`);
     return;
   }
+
+  let route = null;
+  if (SEAN_USDC_PAIR) {
+    route = new Route([SEAN_USDC_PAIR, USDT_USDC_PAIR], USDT_Token);
+    console.log(route);
+  }
+
+  if (SEAN_USDT_PAIR) {
+    route = new Route([SEAN_USDT_PAIR], USDT_Token);
+    console.log(route);
+  }
+
+  const trade = new Trade(
+    route,
+    new TokenAmount(USDT_Token, "500000000"),
+    TradeType.EXACT_INPUT
+  );
   // console.log(SEAN_USDC_PAIR);
 
   // let isSeanUsdcExist = false;
