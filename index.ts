@@ -9,6 +9,7 @@ import {
   Route,
   Trade,
   TradeType,
+  Fetcher,
 } from "@uniswap/sdk";
 import ERC20_ABI from "./src/abis/ERC20_ABI.json";
 
@@ -25,6 +26,7 @@ const UNISWAP_V2_FACTORY_ABI =
 
 const SEAN_ADDRESS = "0xA719CB79Af39A9C10eDA2755E0938bCE35e9DE24";
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const execute = async () => {
@@ -32,67 +34,66 @@ const execute = async () => {
     `=================================================================`
   );
   console.log(`Current signer: ${signer.address}`);
-  // const factory = new Contract(
-  //   uniswapV2FactoryAddress,
-  //   UNISWAP_V2_FACTORY_ABI,
-  //   provider
-  // );
 
   // const usdt = new Contract(USDT_ADDRESS, ERC20_ABI, provider);
 
   // const TokenA = new Token(3, USDT_ADDRESS, 6, "USDT", "Tether USD");
+  const SEAN_Token = new Token(ChainId.MAINNET, SEAN_ADDRESS, 18);
+  const USDT_Token = new Token(ChainId.MAINNET, USDT_ADDRESS, 6);
+  const USDC_Token = new Token(ChainId.MAINNET, USDC_ADDRESS, 6);
 
-  // const TokenB = new Token(3, SEAN_ADDRESS, 18, "SEAN", "Starfish Token");
-  const TokenA = new Token(
-    3,
-    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-    8,
-    "WBTC",
-    "Wrapped BTC"
-  );
-  const TokenB = new Token(
-    3,
-    "0x3F382DbD960E3a9bbCeaE22651E88158d2791550",
-    18,
-    "GHST",
-    "Aavegotchi GHST Token"
-  );
+  const USDT_USDC_PAIR = await Fetcher.fetchPairData(USDT_Token, USDC_Token);
+  console.log(USDT_USDC_PAIR);
 
-  const pair = new Pair(
-    new TokenAmount(TokenB, "2000000000000000000"),
-    new TokenAmount(TokenA, "1000000000000000000")
-  );
+  let SEAN_USDC_PAIR = null;
+  try {
+    SEAN_USDC_PAIR = await Fetcher.fetchPairData(SEAN_Token, USDC_Token);
+  } catch (error) {
+    console.log(`SEAN_USDC_PAIR not exist...`);
+  }
 
-  const route = new Route([pair], TokenA);
-  console.log(route.pairs);
-  console.log(route.path);
+  let SEAN_USDT_PAIR = null;
+  try {
+    SEAN_USDT_PAIR = await Fetcher.fetchPairData(SEAN_Token, USDT_Token);
+  } catch (error) {
+    console.log(`SEAN_USDT_PAIR not exist...`);
+  }
 
-  const trade = new Trade(
-    route,
-    new TokenAmount(TokenA, "1000000000000000"),
-    TradeType.EXACT_INPUT
-  );
+  if (!SEAN_USDC_PAIR && !SEAN_USDT_PAIR) {
+    console.log(`Pairs not exist...`);
+    return;
+  }
+  // console.log(SEAN_USDC_PAIR);
 
-  const bestTrade = Trade.bestTradeExactIn(
-    [pair],
-    new TokenAmount(TokenA, "1000000000000000"),
-    TokenB,
-    { maxNumResults: 3, maxHops: 3 }
-  );
-  console.log(bestTrade.length);
-  console.log(bestTrade[0].route);
+  // let isSeanUsdcExist = false;
+  // const SEAN_USDT_PAIR = await Fetcher.fetchPairData(SEAN_Token, USDT_Token);
+  // console.log(SEAN_USDT_PAIR);
+
+  // const route = new Route([pair], TokenA);
+  // console.log(route.pairs);
+  // console.log(route.path);
+
+  // const trade = new Trade(
+  //   route,
+  //   new TokenAmount(TokenA, "1000000000000000"),
+  //   TradeType.EXACT_INPUT
+  // );
+
+  // const bestTrade = Trade.bestTradeExactIn(
+  //   [pair],
+  //   new TokenAmount(TokenA, "1000000000000000"),
+  //   TokenB,
+  //   { maxNumResults: 3, maxHops: 3 }
+  // );
+  // console.log(bestTrade.length);
+  // console.log(bestTrade[0].route);
 
   // const usdtBalance =
   //   (await usdt.balanceOf(signer.address)) / 10 ** (await usdt.decimals());
   // console.log(`Signer USDT balance: ${usdtBalance} USDT`);
-
-  // const pair = await factory.getPair(SEAN_ADDRESS, USDT_ADDRESS);
-  // console.log(pair);
-  // if (pair === ZERO_ADDRESS) {
-  //   return;
-  // }
 };
 
 (async () => {
-  cron.schedule("0-59/3 * * * * *", execute);
+  await execute();
+  // cron.schedule("0-59/3 * * * * *", execute);
 })();
