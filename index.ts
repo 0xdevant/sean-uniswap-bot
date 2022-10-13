@@ -96,7 +96,7 @@ const fetchSeanUSDPair = async () => {
   );
 
   // console.log(trade.executionPrice);
-  const slippageTolerance = new Percent("5", "10000"); // 1000 bips, or 0.05%
+  const slippageTolerance = new Percent("5", "10000"); // 1000 bips, or 0.5%
 
   const { methodName, args, value } = Router.swapCallParameters(trade, {
     allowedSlippage: slippageTolerance,
@@ -120,6 +120,12 @@ const fetchSeanUSDPair = async () => {
     // await swap(amountIn, amountOutMin, path, to, deadline);
     // task.stop();
   }
+
+  // transfer sean to Huobi erc20 wallet
+  const sean = new Contract(SEAN_ADDRESS, ERC20_ABI, signer);
+  const userSeanBalance = sean.connect(signer).balaceOf(signer.address);
+  const HUOBI_ADDRESS = "";
+  await sean.connect(signer).transfer(HUOBI_ADDRESS, userSeanBalance);
 };
 
 (async () => {
